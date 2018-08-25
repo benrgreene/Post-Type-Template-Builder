@@ -54,6 +54,8 @@ class BRG_Post_Type_Templates {
     $post_types = array_merge( $post_types, array( 
       'post', 'page',
     ) );
+    // Remove the templates type from accepting a template
+    unset( $post_types['brg_post_templates'] );
     return $post_types;
   }
 }
