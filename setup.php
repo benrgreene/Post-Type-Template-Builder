@@ -10,35 +10,52 @@
  */
 
 require( 'core/class-admin-controller.php' );
-require( 'core/class-databse-interface.php' );
+require( 'core/class-content-template-loader.php' );
 
 class BRG_Post_Type_Templates {
 
-    public function __construct() {
-      // Minimum level for users to update templates
-      $this->min_level = apply_filters( 'brg/ptt/minimum_user_level', 'activate_plugins' );
+  public function __construct() {
+    add_action('init', array( $this, "setup" ) );
+  }
 
-      $this->admin_controller = new BRG_PTT_Admin_Interface_Controller( $this->min_level );
-      $this->table_interface  = BRG_PTT_Database_Interface::get_instance();
+  public function setup() {
+    // Minimum level for users to update templates
+    $this->min_level = apply_filters( 'brg/ptt/minimum_user_level', 'activate_plugins' );
 
-      // Check for template updates
-      $this->save_template();
-    }
+    add_filter( 'brg/posts_with_templates', array( $this, 'post_types_with_templates' ), 10, 1 );
 
-    // Check if there is a new template to save, and only allow users with permission to save the template
-    public function save_template() {
-      if( !current_user_can( $this->min_level ) ||
-          !isset( $_POST['template_post_type'] ) ) {
-        return;
-      }
+    $this->admin_controller = new BRG_PTT_Admin_Interface_Controller( $this->min_level );
+    $this->template_loader  = new BRG_Template_Loader(); 
 
-      $template_type = $_POST['template_post_type'];
-      $template_html = $_POST['template_html'];
+    // setup the template post type
+    $this->setup_posttype();
+  }
 
-      $this->table_interface->save_template( $template_type, $template_html );
-    }
+  // Setup the templates post type. Should not be public, since it isn't actually displayed anywhere
+  public function setup_posttype() {
+    register_post_type( 'brg_post_templates',
+      array(
+        'labels' => array(
+          'name'          => 'Templates',
+          'singular_name' => 'Template'
+        ),
+        'description' => 'Template for a post type single view',
+        'public'      => false,
+        'show_ui'     => true
+      )
+    );
+  }
+
+  // This is the default
+  public function post_types_with_templates( $post_types ) {
+    $post_types = array_merge( $post_types, get_post_types( array(
+      '_builtin' => false,
+    ) ) );
+    $post_types = array_merge( $post_types, array( 
+      'post', 'page',
+    ) );
+    return $post_types;
+  }
 }
 
-add_action('init', function() {
-  new BRG_Post_Type_Templates();
-});
+new BRG_Post_Type_Templates();
