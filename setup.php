@@ -56,6 +56,8 @@ class BRG_Post_Type_Templates {
     ) );
     // Remove the templates type from accepting a template
     unset( $post_types['brg_post_templates'] );
+    // Remove ACF from having a template
+    unset( $post_types['acf'] );
     return $post_types;
   }
 }
